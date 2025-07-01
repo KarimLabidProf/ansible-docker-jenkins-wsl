@@ -1,0 +1,37 @@
+pipeline {
+  agent any
+
+  environment {
+    ANSIBLE_HOST_KEY_CHECKING = "False"
+    PYTHONIOENCODING = "utf-8"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/ton-utilisateur/ansible-docker-jenkins-wsl.git'
+      }
+    }
+
+    stage('Exécuter le script Python (Windows)') {
+      steps {
+        bat 'python dynamic_inventory.py > inventory.json'
+      }
+    }
+
+    stage('Déploiement avec Ansible (WSL)') {
+      steps {
+        sh 'wsl ansible-playbook -i inventory.json install-apache.yml'
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ Déploiement terminé avec succès"
+    }
+    failure {
+      echo "❌ Une erreur s’est produite"
+    }
+  }
+}
