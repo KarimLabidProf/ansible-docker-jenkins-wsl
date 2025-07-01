@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git 'https://github.com/ton-utilisateur/ansible-docker-jenkins-wsl.git'
+        git 'https://github.com/KarimLabidProf/ansible-docker-jenkins-wsl.git'
       }
     }
 
