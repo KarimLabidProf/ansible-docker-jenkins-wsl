@@ -7,12 +7,6 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        git 'https://github.com/KarimLabidProf/ansible-docker-jenkins-wsl.git'
-      }
-    }
-
     stage('Exécuter le script Python (Windows)') {
       steps {
         bat 'python dynamic_inventory.py > inventory.json'
