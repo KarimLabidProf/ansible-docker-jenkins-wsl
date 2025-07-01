@@ -22,7 +22,7 @@ pipeline {
                     bat "wsl chmod +x ${wslPath}/dynamic_inventory.py"
 
                     // Exécuter le playbook via WSL
-                    def command = "wsl ansible-playbook ${wslPath}/install_apache.yml -i ${wslPath}/dynamic_inventory.py"
+                    def command = "wsl ansible-playbook ${wslPath}/install-apache.yml -i ${wslPath}/dynamic_inventory.py"
 
                     echo "Exécution de la commande : ${command}"
                     def result = bat(script: command, returnStatus: true)
