@@ -15,7 +15,8 @@ pipeline {
 
     stage('Déploiement avec Ansible (WSL)') {
       steps {
-        sh 'wsl ansible-playbook -i inventory.json install-apache.yml'
+        bat 'wsl ansible-playbook install-apache.yml -i inventory.json'
+
       }
     }
   }
