@@ -1,35 +1,32 @@
 #!/usr/bin/env python3
-import json
 import subprocess
-
-result = subprocess.run(
-    ['docker', 'ps', '--format', '{{.Names}} {{.ID}}'],
-    stdout=subprocess.PIPE
-)
-
-containers = result.stdout.decode().strip().split('\n')
+import json
 
 inventory = {
-    "all": {
-        "hosts": {}
-    }
+    "all": {"hosts": [], "vars": {"ansible_user": "root"}},
+    "_meta": {"hostvars": {}}
 }
 
-for line in containers:
-    if not line:
-        continue
-    name, cid = line.split()
-    ip_result = subprocess.run(
-        ['docker', 'inspect', '-f', '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}', name],
-        stdout=subprocess.PIPE
-    )
-    ip = ip_result.stdout.decode().strip()
-    inventory["all"]["hosts"][name] = {
-        "ansible_host": ip,
-        "ansible_user": "root",
-        "ansible_connection": "ssh",
-        "ansible_ssh_pass": "root"
-    }
+# Liste les conteneurs Docker actifs
+result = subprocess.run(["docker", "ps", "--format", "{{.Names}}"], capture_output=True, text=True)
 
-with open("inventory.json", "w") as f:
-    json.dump(inventory, f, indent=2)
+for name in result.stdout.strip().splitlines():
+    # Inspecter chaque conteneur
+    inspect = subprocess.run(["docker", "inspect", name], capture_output=True, text=True)
+    data = json.loads(inspect.stdout)[0]
+
+    # Vérifier s’il expose le port 22
+    ports = data["NetworkSettings"]["Ports"]
+    if "22/tcp" in ports and ports["22/tcp"]:
+        host_port = ports["22/tcp"][0]["HostPort"]
+        inventory["all"]["hosts"].append(name)
+        inventory["_meta"]["hostvars"][name] = {
+            "ansible_host": "127.0.0.1",
+            "ansible_port": int(host_port),
+            "ansible_user": "root",
+            "ansible_password": "root",  # ajoute le mot de passe SSH
+            "ansible_connection": "ssh",
+            "ansible_python_interpreter": "/usr/bin/python3"
+        }
+
+print(json.dumps(inventory, indent=2))
