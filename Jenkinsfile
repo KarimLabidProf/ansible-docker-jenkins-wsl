@@ -1,32 +1,37 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    ANSIBLE_HOST_KEY_CHECKING = "False"
-    PYTHONIOENCODING = "utf-8"
-  }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-  stages {
-    stage('Exécuter le script Python (Windows)') {
-      steps {
-        bat '"C:/Users/karim/AppData/Local/Programs/Python/Python310/python.exe" dynamic_inventory.py > inventory.json'
-      }
+        stage('Run Ansible playbook with dynamic inventory') {
+            steps {
+                script {
+                    // Récupérer chemin absolu du workspace (chemin Windows)
+                    def repoPath = pwd()
+                    // Conversion du chemin Windows vers chemin WSL (/mnt/c/...)
+                    def wslPath = repoPath.replaceAll('\\\\', '/').replaceFirst('([a-zA-Z]):', '/mnt/$1').toLowerCase()
+
+                    // Construire la commande ansible-playbook
+                    def ansibleCmd = "wsl ansible-playbook ${wslPath}/install_apache.yml -i ${wslPath}/dynamic_inventory.py"
+
+                    echo "Exécution de la commande : ${ansibleCmd}"
+
+                    // Donner les droits d’exécution au script (important)
+                    sh "wsl chmod +x ${wslPath}/dynamic_inventory.py"
+
+                    // Exécuter le playbook, récupérer le code retour
+                    def status = sh(script: ansibleCmd, returnStatus: true)
+
+                    if (status != 0) {
+                        error "Le playbook Ansible a échoué avec le code ${status}"
+                    }
+                }
+            }
+        }
     }
-
-    stage('Déploiement avec Ansible (WSL)') {
-      steps {
-        bat 'wsl ansible-playbook install-apache.yml -i inventory.json'
-
-      }
-    }
-  }
-
-  post {
-    success {
-      echo "✅ Déploiement terminé avec succès"
-    }
-    failure {
-      echo "❌ Une erreur s’est produite"
-    }
-  }
 }
