@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 import subprocess
 
@@ -10,16 +9,8 @@ result = subprocess.run(
 containers = result.stdout.decode().strip().split('\n')
 
 inventory = {
-    "_meta": {
-        "hostvars": {}
-    },
     "all": {
-        "hosts": [],
-        "vars": {
-            "ansible_user": "root",
-            "ansible_connection": "ssh",
-            "ansible_ssh_pass": "root"
-        }
+        "hosts": {}
     }
 }
 
@@ -32,9 +23,12 @@ for line in containers:
         stdout=subprocess.PIPE
     )
     ip = ip_result.stdout.decode().strip()
-    inventory["all"]["hosts"].append(name)
-    inventory["_meta"]["hostvars"][name] = {
-        "ansible_host": ip
+    inventory["all"]["hosts"][name] = {
+        "ansible_host": ip,
+        "ansible_user": "root",
+        "ansible_connection": "ssh",
+        "ansible_ssh_pass": "root"
     }
 
-print(json.dumps(inventory, indent=2))
+with open("inventory.json", "w") as f:
+    json.dump(inventory, f, indent=2)
