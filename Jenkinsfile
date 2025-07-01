@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Exécuter le script Python (Windows)') {
       steps {
-        bat 'python dynamic_inventory.py > inventory.json'
+        bat 'py dynamic_inventory.py > inventory.json'
       }
     }
 
